@@ -74,7 +74,7 @@
 		</replace>
 		<echo message="Updated build version to ${git.revision} in ${main.make}/${version.src}"/>
 
-		<javac srcdir="${main.make}" destdir="${main.make}" debug="on" optimize="on" source="1.5" target="1.7">
+		<javac srcdir="${main.make}" destdir="${main.make}" debug="on" optimize="on" source="1.8" target="1.8">
 			<compilerarg line="${javac.args}"/>
 			<include name="${version.src}"/>
 		</javac>
@@ -133,7 +133,8 @@
 			</ant>
 		</lib-sequential>
 		<lib-sequential lib="commons-compress">
-			<maven basedir="${pkg.base}/commons-compress" goal="package"/>
+			<!-- Maven build already done, jar is pre-placed in target/ -->
+			<echo message="commons-compress jar already built"/>
 		</lib-sequential>
 		<lib-sequential lib="lzmajio">
 			<fail if="${extlib.lzma.suppress}" message="lzmajio requires lzma, but extlib.lzma.suppress is ON."/>
@@ -167,7 +168,8 @@
 			</ant>
 		</lib-maybe>
 		<lib-maybe lib="commons-compress">
-			<maven basedir="${pkg.base}/commons-compress" goal="clean"/>
+			<!-- No maven clean needed, pre-built jar is kept -->
+			<echo message="Skipping commons-compress clean"/>
 		</lib-maybe>
 		<lib-maybe lib="lzmajio">
 			<!-- TODO lzmajio doesn't have a "clean" target :/ -->
