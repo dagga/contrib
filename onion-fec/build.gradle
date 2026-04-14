@@ -1,0 +1,9 @@
+// onion-fec build
+
+dependencies {
+    implementation project(':onion-common')
+}
+
+jar {
+    archiveBaseName = 'onion-fec'
+}

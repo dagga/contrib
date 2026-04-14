@@ -1,0 +1,13 @@
+rootProject.name = 'contrib'
+
+include 'onion-common'
+include 'onion-fec'
+include 'lzmajio'
+include 'bitcollider-core'
+include 'freenet-ext'
+
+project(':onion-common').projectDir = file('onion-common')
+project(':onion-fec').projectDir = file('onion-fec')
+project(':lzmajio').projectDir = file('lzmajio')
+project(':bitcollider-core').projectDir = file('bitcollider-core')
+project(':freenet-ext').projectDir = file('freenet-ext')

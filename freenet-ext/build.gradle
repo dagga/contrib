@@ -1,0 +1,106 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+plugins {
+    id 'java'
+}
+
+// Get git revision via git describe
+def getGitRevision() {
+    try {
+        def proc = 'git describe --always --abbrev=4'.execute()
+        proc.waitFor()
+        if (proc.exitValue() == 0) {
+            return proc.text.trim()
+        }
+    } catch (Exception e) {
+        // ignore
+    }
+    return '@custom@'
+}
+
+def gitRevision = getGitRevision()
+
+dependencies {
+    implementation project(':onion-common')
+    implementation project(':onion-fec')
+    implementation project(':lzmajio')
+    implementation project(':bitcollider-core')
+}
+
+// Configure source sets - freenet-ext only has ExtVersion which is generated separately
+sourceSets {
+    main {
+        java {
+            // Main src dir only for non-ExtVersion files (currently none)
+            srcDir 'src'
+            exclude 'freenet/node/ExtVersion.java'
+        }
+        resources {
+            srcDirs = []
+        }
+    }
+}
+
+// Process version file - replace @custom@ token, compile it separately
+task compileExtVersion(type: JavaCompile) {
+    dependsOn 'processVersion'
+    source = "$buildDir/generated-src"
+    classpath = sourceSets.main.compileClasspath
+    destinationDirectory = file("$buildDir/classes/java/main")
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
+task processVersion(type: Copy) {
+    from('src/freenet/node') {
+        include 'ExtVersion.java'
+        filter(ReplaceTokens, tokens: [custom: gitRevision])
+    }
+    into "$buildDir/generated-src/freenet/node"
+}
+
+compileJava.dependsOn processVersion
+compileExtVersion.dependsOn compileJava
+classes.dependsOn compileExtVersion
+jar.dependsOn classes
+
+// Copy native libraries from dependency projects - handled directly in jar task
+
+jar {
+    archiveBaseName = 'freenet-ext'
+    archiveVersion = ''
+    
+    // Exclude the raw .java source from jar (only include .class)
+    exclude '**/ExtVersion.java'
+    
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    manifest {
+        attributes(
+            'Build-Revision': gitRevision
+        )
+    }
+    
+    // Include native libs from dependency projects
+    from('../jcpuid/lib') { include 'freenet/**' }
+    from('../NativeBigInteger/lib') { include 'net/i2p/**' }
+    from('../NativeThread/lib') { include 'freenet/**' }
+}
+
+// Copy dependency jars to build/libs
+task copyDeps(type: Copy) {
+    dependsOn ':onion-common:jar', ':onion-fec:jar', ':lzmajio:jar', ':bitcollider-core:jar'
+    
+    from project(':onion-common').tasks.jar
+    from project(':onion-fec').tasks.jar
+    from project(':lzmajio').tasks.jar
+    from project(':bitcollider-core').tasks.jar
+    
+    into "$buildDir/libs"
+    
+    rename { name ->
+        name.replaceAll('-\\d+\\.jar', '.jar').replaceAll('-unspecified\\.jar', '.jar')
+    }
+}
+
+build.dependsOn copyDeps
