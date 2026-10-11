@@ -1,5 +1,21 @@
 // onion-common build
 
+sourceSets {
+    test {
+        java {
+            srcDirs = ['test/src']
+        }
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}
+
+test {
+    enabled = true
+}
+
 jar {
     archiveBaseName = 'onion-common'
 }
